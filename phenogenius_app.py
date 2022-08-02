@@ -56,7 +56,7 @@ def load_data():
         sep="\t",
         compression="gzip",
         index_col=0,
-        engine="pyarrow",
+        # engine="pyarrow",
     )
     return matrix
 
