@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "PhenoGenius_app"
+version = "0.1.0"
+description = ""
+authors = ["kevin.yauy <kevin.yauy@seqone.fr>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = ">=1.3.0"
+pandarallel = "^1.6.1"
+scikit-learn = "^1.1.1"
+ujson = "^5.4.0"
+streamlit = "^1.11.1"
+umap-learn = "^0.5.3"
+matplotlib = "^3.5.2"
+seaborn = "^0.11.2"
+plotnine = "^0.9.0"
+obonet = "^0.3.0"
+multipy = "^0.16"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
