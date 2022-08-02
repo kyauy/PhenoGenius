@@ -284,14 +284,6 @@ if submit_button:
 
     st.header("Clinical description with symptom interaction modeling")
 
-    with st.expander("See symptoms with similarity > 80%"):
-        sim_dict, hpo_list_add = get_similar_terms(hpo_list, similarity_terms_dict)
-        similar_list = list(set(hpo_list_add) - set(hpo_list))
-        similar_list_desc = get_hpo_name_list(similar_list, hp_onto)
-        similar_list_desc_df = pd.DataFrame.from_dict(similar_list_desc, orient="index")
-        similar_list_desc_df.columns = ["description"]
-        st.write(similar_list_desc_df)
-
     witness = np.zeros(len(data.columns))
     witness_nmf = np.matmul(pheno_NMF.components_, witness)
 
@@ -366,7 +358,7 @@ if submit_button:
         )
 
         group_involved = cluster_selected["group"]
-        if math.isnan(group_involved) == False:
+        if math.isnan(float(group_involved)) == False:
             group_list = [int(x) for x in cluster_selected["group"].split(",")]
             topic_involved = topic.loc[group_list, :]
             st.write("Group(s) of symptoms statistically enriched: ", topic_involved)
@@ -383,6 +375,14 @@ if submit_button:
             "HPOs declared in cluster:",
             pd.DataFrame.from_dict(dict_count_print, orient="index"),
         )
+
+    with st.expander("See symptoms with similarity > 80%"):
+        sim_dict, hpo_list_add = get_similar_terms(hpo_list, similarity_terms_dict)
+        similar_list = list(set(hpo_list_add) - set(hpo_list))
+        similar_list_desc = get_hpo_name_list(similar_list, hp_onto)
+        similar_list_desc_df = pd.DataFrame.from_dict(similar_list_desc, orient="index")
+        similar_list_desc_df.columns = ["description"]
+        st.write(similar_list_desc_df)
 
     st.header("Phenotype matching by similarity of symptoms")
     results_sum_add = score_sim_add(hpo_list_add, data, sim_dict)
