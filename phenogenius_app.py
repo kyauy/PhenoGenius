@@ -27,9 +27,14 @@ st.sidebar.header(
 
 st.sidebar.markdown(
     """
- This webapp presents symptom interaction models in genetic diseases to provide :
+ This webapp presents symptom interaction models in genetic diseases to provide:
  - Standardized clinical descriptions 
  - Interpretable matches between symptoms and genes
+
+ Code source is available in GitHub:
+ [https://github.com/kyauy/PhenoGenius](https://github.com/kyauy/PhenoGenius)
+
+ PhenoGenius is a collaborative project from:
 """
 )
 
