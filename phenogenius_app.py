@@ -28,7 +28,7 @@ st.sidebar.header(
 st.sidebar.markdown(
     """
  This webapp presents symptom interaction models in genetic diseases to provide :
- - Standardized clinical descriptions in group of symptoms dimensions
+ - Standardized clinical descriptions 
  - Interpretable matches between symptoms and genes
 """
 )
