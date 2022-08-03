@@ -2,7 +2,7 @@
 
 Symptom interaction modeling for precision medicine
 
-![logo](data/img/phenogenius.png){:height="200x" width="200px"}.
+<img src="https://raw.githubusercontent.com/kyauy/PhenoGenius/main/data/img/phenogenius.png" width="300" height="300">
 
 ## Overview
 
@@ -49,4 +49,4 @@ Enjoy !
 
 [![Université Grenoble Alpes](data/img/logo-uga.png)](https://iab.univ-grenoble-alpes.fr/)
 
-[![CHU Grenoble Alpes](data/img/logo-chuga.png)](https://www.chu-grenoble.fr/content/service-de-genetique-genomique-et-procreation)
+<a href="https://www.chu-grenoble.fr/content/service-de-genetique-genomique-et-procreation"><img src="https://www.chu-grenoble.fr/sites/all/themes/acti_main/tpl/img/logo.png"></a>
