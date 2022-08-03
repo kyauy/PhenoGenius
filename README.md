@@ -2,7 +2,7 @@
 
 Symptom interaction modeling for precision medicine
 
-<img src="https://raw.githubusercontent.com/kyauy/PhenoGenius/main/data/img/phenogenius.png" width="300" height="300">
+<img src="https://raw.githubusercontent.com/kyauy/PhenoGenius/main/data/img/phenogenius.png" width="200" height="200">
 
 ## Overview
 
@@ -39,7 +39,7 @@ Enjoy !
 
 ## License
 
-**PhenoGenius** is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full license text.
+*PhenoGenius* is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full license text.
 
 ## Misc
 
