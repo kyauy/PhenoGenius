@@ -1,3 +1,4 @@
+from ast import Str
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -8,6 +9,7 @@ from collections import Counter
 from pandarallel import pandarallel
 from plotnine import *
 import math
+import sklearn
 
 # -- Set page config
 apptitle = "PhenoGenius"
@@ -307,10 +309,8 @@ if submit_button:
 
     case_sugg_df = (patient_sugg_df - witness_sugg_df).sum()
 
-    patient_df_info = (
-        pd.DataFrame(case_sugg_df)
-        .sort_values(by=0, ascending=False)
-        .merge(topic, left_index=True, right_index=True)
+    patient_df_info = pd.DataFrame(case_sugg_df).merge(
+        topic, left_index=True, right_index=True
     )
 
     patient_df_info["mean_score"] = round(
@@ -336,7 +336,10 @@ if submit_button:
             key="download-csv",
         )
 
-    patient_nmf_umap = umap.transform(pd.DataFrame(patient_nmf).T)
+    patient_transposed = sklearn.preprocessing.normalize(
+        np.array(patient_df_info["mean_score"]).reshape(1, -1), norm="l1"
+    )
+    patient_nmf_umap = umap.transform(pd.DataFrame(patient_transposed))
     with st.expander("See projection in cohort"):
         umap_cohort["dist"] = abs(umap_cohort["x"] - patient_nmf_umap[0, 0]) + abs(
             umap_cohort["y"] - patient_nmf_umap[0, 1]
@@ -352,13 +355,23 @@ if submit_button:
             dict(Counter(cluster_selected["gene_list"])), orient="index"
         )
         gene_in_cluster.columns = ["count"]
+        if gene_diag:
+            if gene_diag in gene_in_cluster.index:
+                st.write("Gene diag in cluster", gene_in_cluster.loc[gene_diag, :])
+
         st.write(
             "Gene(s) involved in cluster: ",
             gene_in_cluster.sort_values("count", ascending=False),
         )
 
         group_involved = cluster_selected["group"]
-        if math.isnan(float(group_involved)) == False:
+        if (
+            isinstance(group_involved, float)
+            and math.isnan(float(group_involved)) == False
+        ):
+            topic_involved = topic.loc[group_involved, :]
+            st.write("Group(s) of symptoms statistically enriched: ", topic_involved)
+        elif isinstance(group_involved, str):
             group_list = [int(x) for x in cluster_selected["group"].split(",")]
             topic_involved = topic.loc[group_list, :]
             st.write("Group(s) of symptoms statistically enriched: ", topic_involved)
@@ -375,14 +388,16 @@ if submit_button:
             "HPOs declared in cluster:",
             pd.DataFrame.from_dict(dict_count_print, orient="index"),
         )
-
-    with st.expander("See symptoms with similarity > 80%"):
-        sim_dict, hpo_list_add = get_similar_terms(hpo_list, similarity_terms_dict)
-        similar_list = list(set(hpo_list_add) - set(hpo_list))
-        similar_list_desc = get_hpo_name_list(similar_list, hp_onto)
-        similar_list_desc_df = pd.DataFrame.from_dict(similar_list_desc, orient="index")
-        similar_list_desc_df.columns = ["description"]
-        st.write(similar_list_desc_df)
+    sim_dict, hpo_list_add = get_similar_terms(hpo_list, similarity_terms_dict)
+    similar_list = list(set(hpo_list_add) - set(hpo_list))
+    similar_list_desc = get_hpo_name_list(similar_list, hp_onto)
+    if similar_list_desc:
+        with st.expander("See symptoms with similarity > 80%"):
+            similar_list_desc_df = pd.DataFrame.from_dict(
+                similar_list_desc, orient="index"
+            )
+            similar_list_desc_df.columns = ["description"]
+            st.write(similar_list_desc_df)
 
     st.header("Phenotype matching by similarity of symptoms")
     results_sum_add = score_sim_add(hpo_list_add, data, sim_dict)
