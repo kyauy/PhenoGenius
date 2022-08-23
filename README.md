@@ -2,37 +2,48 @@
 
 Symptom interaction modeling for precision medicine
 
-<img src="https://raw.githubusercontent.com/kyauy/PhenoGenius/main/data/img/phenogenius.png" width="200" height="200">
+<img src="https://raw.githubusercontent.com/kyauy/PhenoGenius/main/data/img/phenogenius.png" width="150" height="150">
 
 ## Overview
 
 Symptom interaction model provide a method to standardize clinical descriptions and fully exploit phenotypic data in precision medicine.
 
-This repository contains scripts and files to use PhenoGenius, the phenotype matching system for genetic disease based on these model. **Please try PhenoGenius in the cloud at [https://tinyurl.com/phenogenius-app](https://tinyurl.com/phenogenius-app).**
+This repository contains scripts and files to use PhenoGenius, the phenotype matching system for genetic disease based on this model. **Please try PhenoGenius in the cloud at [https://tinyurl.com/phenogenius-app](https://tinyurl.com/phenogenius-app).**
 
 If you use PhenoGenius, please cite:
 > Yauy et al., Learning phenotypic patterns in genetic disease by symptom interaction modeling. medrXiv (2022). [https://doi.org/10.1101/2022.07.29.22278181](https://doi.org/10.1101/2022.07.29.22278181)
 
-## Use streamlit webapp in your desktop
+## Install
 
-Requirements
+- Requirements
 
 ```bash
-python > 3.8
+python == 3.8
 poetry
 ```
 
-### Install dependencies
+- Install dependencies
 
 ```bash
 poetry install
 ```
+
+## Use streamlit webapp in your desktop
 
 ### Run
 
 ```bash
 poetry shell
 streamlit run phenogenius_app.py
+```
+
+## Use command-line client
+
+### Run
+
+```bash
+poetry shell
+poetry run phenogenius_cli.py --hpo_list HP:0000107,HP:0000108,HP:0001407,HP:0005562 --result_file PKD1.tsv
 ```
 
 Enjoy !

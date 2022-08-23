@@ -78,6 +78,15 @@ def load_umap_cohort():
     return matrix
 
 
+@st.cache(allow_output_mutation=True)
+def load_cohort():
+    matrix = pd.read_csv(
+        "data/resources/cohort_diag.tsv",
+        sep="\t",
+    )
+    return matrix
+
+
 def load_nmf_model():
     with open("data/resources/pheno_NMF_390_model_42.pkl", "rb") as pickle_file:
         pheno_NMF = pk.load(pickle_file)
@@ -245,6 +254,7 @@ if submit_button:
     pheno_NMF, reduced = load_nmf_model()
     cluster, umap = load_projection()
     umap_cohort = load_umap_cohort()
+    cohort = load_cohort()
     cluster_info = load_cluster_data()
     topic = load_topic_data()
     similarity_terms_dict = load_similarity_dict()
@@ -351,6 +361,13 @@ if submit_button:
         )
         closest_patient = umap_cohort.nsmallest(3, "dist")
         st.write("Closest patients in the cohort are: ", closest_patient)
+        st.write("Closest patient: ", cohort.loc[closest_patient.index[0]])
+        st.write(
+            get_hpo_name_list(
+                cohort.loc[closest_patient.index[0]].hpo_list.split(","),
+                hp_onto,
+            )
+        )
 
         cluster_selected = cluster_info[str(closest_patient["cluster"].values[0])]
         st.write("Selected cluster: ", closest_patient["cluster"].values[0])
@@ -412,7 +429,7 @@ if submit_button:
     cols = results_sum_add.columns.tolist()
     cols = cols[-2:] + cols[:-2]
     match_sim = results_sum_add[cols].sort_values(by=["sum"], ascending=False)
-    st.dataframe(match_sim)
+    st.dataframe(match_sim[match_sim["sum"] > 0.01])
 
     match_sim_csv = convert_df(match_sim)
 
@@ -465,7 +482,7 @@ if submit_button:
     )
     case_df_sort["gene_symbol"] = case_df_sort.index.to_series().apply(get_symbol)
     match_nmf = case_df_sort[["gene_symbol", "rank", "sum"]]
-    st.dataframe(match_nmf)
+    st.dataframe(match_nmf[match_nmf["sum"] > 0.01])
 
     match_nmf_csv = convert_df(match_nmf)
 
