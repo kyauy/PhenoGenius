@@ -63,7 +63,6 @@ def load_data():
         sep="\t",
         compression="gzip",
         index_col=0,
-        # engine="pyarrow",
     )
     return matrix
 
@@ -126,7 +125,6 @@ def load_topic_data():
     topic = pd.read_csv(
         "data/resources/main_topics_hpo_390_42_filtered_abs_103.tsv",
         sep="\t",
-        # compression="gzip",
         index_col=0,
     )
     return topic
@@ -185,8 +183,6 @@ def get_similar_terms(hpo_list, similarity_terms_dict):
                     if key in hpo_list_w_simi.keys():
                         if score > hpo_list_w_simi[key]:
                             hpo_list_w_simi[key] = score
-                            # print(key)
-                            # print(statistics.mean(similarity_terms_dict[term].values()))
                         else:
                             pass
                     else:
@@ -232,7 +228,7 @@ def get_relatives_list(hpo_list, hp_onto):
 form = st.form(key="my_form")
 hpo = form.text_input(
     label="Provide your HPOs (separated by comma)",
-    value="HP:0000107,HP:0000108,HP:0001407,HP:0005562",
+    value="HP:0000107,HP:0000108,HP:0001407",
 )
 gene_diag = form.text_input(
     label="(optional) Provide HGNC gene symbol to be tested", value="PKD1"
@@ -240,10 +236,6 @@ gene_diag = form.text_input(
 
 
 submit_button = form.form_submit_button(label="Submit")
-# hpo_list_name = []
-#
-# for hpo in hpo_list:
-#    hpo_list_name.append(obo_loaded[hpo].name)
 
 if submit_button:
     pandarallel.initialize(nb_workers=4)
