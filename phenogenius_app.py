@@ -123,7 +123,7 @@ def load_cluster_data():
 @st.cache
 def load_topic_data():
     topic = pd.read_csv(
-        "data/resources/main_topics_hpo_390_42_filtered_abs_103.tsv",
+        "data/resources/main_topics_hpo_390_42_filtered_norm_004.tsv",
         sep="\t",
         index_col=0,
     )
