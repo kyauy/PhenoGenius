@@ -6,8 +6,6 @@ from PIL import Image
 import ujson as json
 import pickle as pk
 from collections import Counter
-from pandarallel import pandarallel
-from plotnine import *
 import math
 import sklearn
 
@@ -51,12 +49,12 @@ image_chuga = Image.open("data/img/logo-chuga.png")
 st.sidebar.image(image_chuga, caption=None, width=60)
 
 
-@st.cache
+@st.cache(max_entries=30)
 def convert_df(df):
     return df.to_csv(sep="\t").encode("utf-8")
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, max_entries=30)
 def load_data():
     matrix = pd.read_csv(
         "data/resources/ohe_all_thesaurus_weighted.tsv.gz",
@@ -67,7 +65,7 @@ def load_data():
     return matrix
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, max_entries=30)
 def load_umap_cohort():
     matrix = pd.read_csv(
         "data/resources/umap_loc_cohort.tsv",
@@ -77,7 +75,7 @@ def load_umap_cohort():
     return matrix
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, max_entries=30)
 def load_cohort():
     matrix = pd.read_csv(
         "data/resources/cohort_diag.tsv",
@@ -86,6 +84,9 @@ def load_cohort():
     return matrix
 
 
+@st.cache(
+    hash_funcs={"Pickle": lambda _: None}, allow_output_mutation=True, max_entries=30
+)
 def load_nmf_model():
     with open("data/resources/pheno_NMF_390_model_42.pkl", "rb") as pickle_file:
         pheno_NMF = pk.load(pickle_file)
@@ -94,7 +95,7 @@ def load_nmf_model():
     return pheno_NMF, reduced
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache(allow_output_mutation=True, max_entries=30)
 def symbol_to_id_to_dict():
     # from NCBI
     ncbi_df = pd.read_csv("data/resources/Homo_sapiens.gene_info.gz", sep="\t")
@@ -106,21 +107,25 @@ def symbol_to_id_to_dict():
     return ncbi_to_dict_ncbi, ncbi_to_dict
 
 
-@st.cache(hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True)
+@st.cache(
+    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=30
+)
 def load_hp_ontology():
     with open("data/resources/hpo_obo.json") as json_data:
         data_dict = json.load(json_data)
     return data_dict
 
 
-@st.cache(hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True)
+@st.cache(
+    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=30
+)
 def load_cluster_data():
     with open("data/resources/cluster_info.json") as json_data:
         data_dict = json.load(json_data)
     return data_dict
 
 
-@st.cache
+@st.cache(allow_output_mutation=True, max_entries=30)
 def load_topic_data():
     topic = pd.read_csv(
         "data/resources/main_topics_hpo_390_42_filtered_norm_004.tsv",
@@ -130,13 +135,18 @@ def load_topic_data():
     return topic
 
 
-@st.cache(hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True)
+@st.cache(
+    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=30
+)
 def load_similarity_dict():
     with open("data/resources/similarity_dict_threshold_80.json") as json_data:
         data_dict = json.load(json_data)
     return data_dict
 
 
+@st.cache(
+    hash_funcs={"Pickle": lambda _: None}, allow_output_mutation=True, max_entries=30
+)
 def load_projection():
     with open("data/resources/clustering_model.pkl", "rb") as pickle_file:
         cluster = pk.load(pickle_file)
@@ -238,8 +248,6 @@ gene_diag = form.text_input(
 submit_button = form.form_submit_button(label="Submit")
 
 if submit_button:
-    pandarallel.initialize(nb_workers=4)
-
     ncbi, symbol = symbol_to_id_to_dict()
     hp_onto = load_hp_ontology()
     data = load_data()
@@ -306,12 +314,12 @@ if submit_button:
     witness_sugg_df = (
         pd.DataFrame(reduced)
         .set_index(data.index)
-        .parallel_apply(lambda x: (x - witness_nmf) ** 2, axis=1)
+        .apply(lambda x: (x - witness_nmf) ** 2, axis=1)
     )
     patient_sugg_df = (
         pd.DataFrame(reduced)
         .set_index(data.index)
-        .parallel_apply(lambda x: (x - patient_nmf) ** 2, axis=1)
+        .apply(lambda x: (x - patient_nmf) ** 2, axis=1)
     )
 
     case_sugg_df = (patient_sugg_df - witness_sugg_df).sum()
@@ -454,13 +462,13 @@ if submit_button:
     patient_df = (
         pd.DataFrame(reduced)
         .set_index(data.index)
-        .parallel_apply(lambda x: sum((x - patient_nmf) ** 2), axis=1)
+        .apply(lambda x: sum((x - patient_nmf) ** 2), axis=1)
     )
 
     witness_df = (
         pd.DataFrame(reduced)
         .set_index(data.index)
-        .parallel_apply(lambda x: sum((x - witness_nmf) ** 2), axis=1)
+        .apply(lambda x: sum((x - witness_nmf) ** 2), axis=1)
     )
 
     case_df = pd.DataFrame(patient_df - witness_df)
