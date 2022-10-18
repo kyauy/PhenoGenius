@@ -261,9 +261,6 @@ if submit_button:
 
     hpo_list_ini = hpo.strip().split(",")
 
-    with st.expander("See HPO inputs"):
-        st.write(get_hpo_name_list(hpo_list_ini, hp_onto))
-
     # if gene_diag:
     #    st.write("You selected gene id:", ncbi[gene_diag])
 
@@ -271,6 +268,12 @@ if submit_button:
     for hpo in hpo_list_ini:
         if hpo in ["HP:0000001"]:
             pass
+        elif len(hpo) != 10:
+            st.write("Incorrect HPO format: " + hpo + ". Please check.")
+            pass
+        elif hpo not in data.columns:
+            pass
+            st.write(hpo + " not in current database. Please modify.")
         else:
             if data[hpo].astype(bool).sum(axis=0) != 0:
                 hpo_list_up.append(hpo)
@@ -297,215 +300,230 @@ if submit_button:
                         get_hpo_name(hpo_to_test),
                     )
     hpo_list = list(set(hpo_list_up))
-    hpo_list_name = get_relatives_list(hpo_list, hp_onto)
 
-    st.header("Clinical description with symptom interaction modeling")
+    if hpo_list:
+        with st.expander("See HPO inputs"):
+            st.write(get_hpo_name_list(hpo_list_ini, hp_onto))
 
-    witness = np.zeros(len(data.columns))
-    witness_nmf = np.matmul(pheno_NMF.components_, witness)
+        hpo_list_name = get_relatives_list(hpo_list, hp_onto)
 
-    patient = np.zeros(len(data.columns))
-    for hpo in hpo_list:
-        hpo_index = list(data.columns).index(hpo)
-        patient[hpo_index] = 1
+        st.header("Clinical description with symptom interaction modeling")
 
-    patient_nmf = np.matmul(pheno_NMF.components_, patient)
+        witness = np.zeros(len(data.columns))
+        witness_nmf = np.matmul(pheno_NMF.components_, witness)
 
-    witness_sugg_df = (
-        pd.DataFrame(reduced)
-        .set_index(data.index)
-        .apply(lambda x: (x - witness_nmf) ** 2, axis=1)
-    )
-    patient_sugg_df = (
-        pd.DataFrame(reduced)
-        .set_index(data.index)
-        .apply(lambda x: (x - patient_nmf) ** 2, axis=1)
-    )
+        patient = np.zeros(len(data.columns))
+        for hpo in hpo_list:
+            hpo_index = list(data.columns).index(hpo)
+            patient[hpo_index] = 1
 
-    case_sugg_df = (patient_sugg_df - witness_sugg_df).sum()
+        patient_nmf = np.matmul(pheno_NMF.components_, patient)
 
-    patient_df_info = pd.DataFrame(case_sugg_df).merge(
-        topic, left_index=True, right_index=True
-    )
-
-    patient_df_info["mean_score"] = round(
-        patient_df_info[0] / (patient_df_info["total_weight"] ** 2), 4
-    )
-
-    patient_df_info_write = patient_df_info[
-        ["mean_score", "main_term", "n_hpo", "hpo_name", "hpo_list", "weight"]
-    ].sort_values("mean_score", ascending=False)
-
-    with st.expander("See projection in groups of symptoms dimension*"):
-        st.dataframe(patient_df_info_write)
-        st.write(
-            "\* For interpretability, we report only the top 10% of the 390 groups of interacting symptom associations"
+        witness_sugg_df = (
+            pd.DataFrame(reduced)
+            .set_index(data.index)
+            .apply(lambda x: (x - witness_nmf) ** 2, axis=1)
         )
-        match_proj_csv = convert_df(patient_df_info_write)
+        patient_sugg_df = (
+            pd.DataFrame(reduced)
+            .set_index(data.index)
+            .apply(lambda x: (x - patient_nmf) ** 2, axis=1)
+        )
+
+        case_sugg_df = (patient_sugg_df - witness_sugg_df).sum()
+
+        patient_df_info = pd.DataFrame(case_sugg_df).merge(
+            topic, left_index=True, right_index=True
+        )
+
+        patient_df_info["mean_score"] = round(
+            patient_df_info[0] / (patient_df_info["total_weight"] ** 2), 4
+        )
+
+        patient_df_info_write = patient_df_info[
+            ["mean_score", "main_term", "n_hpo", "hpo_name", "hpo_list", "weight"]
+        ].sort_values("mean_score", ascending=False)
+
+        with st.expander("See projection in groups of symptoms dimension*"):
+            st.dataframe(patient_df_info_write)
+            st.write(
+                "\* For interpretability, we report only the top 10% of the 390 groups of interacting symptom associations"
+            )
+            match_proj_csv = convert_df(patient_df_info_write)
+
+            st.download_button(
+                "Download description projection",
+                match_proj_csv,
+                "clin_desc_projected.tsv",
+                "text/csv",
+                key="download-csv",
+            )
+
+        patient_transposed = sklearn.preprocessing.normalize(
+            np.array(patient_df_info["mean_score"]).reshape(1, -1), norm="l1"
+        )
+        patient_nmf_umap = umap.transform(pd.DataFrame(patient_transposed))
+        with st.expander("See projection in cohort"):
+            umap_cohort["dist"] = abs(umap_cohort["x"] - patient_nmf_umap[0, 0]) + abs(
+                umap_cohort["y"] - patient_nmf_umap[0, 1]
+            )
+            closest_patient = umap_cohort.nsmallest(3, "dist")
+            st.write("Closest patients in the cohort are: ", closest_patient)
+            st.write("Closest patient: ", cohort.loc[closest_patient.index[0]])
+            st.write(
+                get_hpo_name_list(
+                    cohort.loc[closest_patient.index[0]].hpo_list.split(","),
+                    hp_onto,
+                )
+            )
+
+            cluster_selected = cluster_info[str(closest_patient["cluster"].values[0])]
+            st.write("Selected cluster: ", closest_patient["cluster"].values[0])
+            st.write("Number of patient in cluster: ", cluster_selected["n_patients"])
+
+            gene_in_cluster = pd.DataFrame.from_dict(
+                dict(Counter(cluster_selected["gene_list"])), orient="index"
+            )
+            gene_in_cluster.columns = ["count"]
+            if gene_diag:
+                if gene_diag in gene_in_cluster.index:
+                    st.write("Gene diag in cluster", gene_in_cluster.loc[gene_diag, :])
+
+            st.write(
+                "Gene(s) involved in cluster: ",
+                gene_in_cluster.sort_values("count", ascending=False),
+            )
+
+            group_involved = cluster_selected["group"]
+            if (
+                isinstance(group_involved, float)
+                and math.isnan(float(group_involved)) == False
+            ):
+                topic_involved = topic.loc[group_involved, :]
+                st.write(
+                    "Group(s) of symptoms statistically enriched: ", topic_involved
+                )
+            elif isinstance(group_involved, str):
+                group_list = [int(x) for x in cluster_selected["group"].split(",")]
+                topic_involved = topic.loc[group_list, :]
+                st.write(
+                    "Group(s) of symptoms statistically enriched: ", topic_involved
+                )
+
+            dict_count_print = {}
+            dict_count = dict(Counter(cluster_selected["hpo_list"]))
+            dict_count_sorted = sorted(
+                dict_count.items(), key=lambda x: x[1], reverse=True
+            )
+            for element in dict_count_sorted:
+                dict_count_print[element[0]] = {
+                    "description": hp_onto[element[0]]["name"],
+                    "count": element[1],
+                }
+            st.write(
+                "HPOs declared in cluster:",
+                pd.DataFrame.from_dict(dict_count_print, orient="index"),
+            )
+        sim_dict, hpo_list_add = get_similar_terms(hpo_list, similarity_terms_dict)
+        similar_list = list(set(hpo_list_add) - set(hpo_list))
+        similar_list_desc = get_hpo_name_list(similar_list, hp_onto)
+        if similar_list_desc:
+            with st.expander("See symptoms with similarity > 80%"):
+                similar_list_desc_df = pd.DataFrame.from_dict(
+                    similar_list_desc, orient="index"
+                )
+                similar_list_desc_df.columns = ["description"]
+                st.write(similar_list_desc_df)
+
+        st.header("Phenotype matching by similarity of symptoms")
+        results_sum_add = score_sim_add(hpo_list_add, data, sim_dict)
+        results_sum_add["rank"] = (
+            results_sum_add["sum"].rank(ascending=False, method="max").astype(int)
+        )
+        cols = results_sum_add.columns.tolist()
+        cols = cols[-2:] + cols[:-2]
+        match_sim = results_sum_add[cols].sort_values(by=["sum"], ascending=False)
+        st.dataframe(match_sim[match_sim["sum"] > 0.01])
+
+        match_sim_csv = convert_df(match_sim)
 
         st.download_button(
-            "Download description projection",
-            match_proj_csv,
-            "clin_desc_projected.tsv",
+            "Download matching results",
+            match_sim_csv,
+            "match_sim.tsv",
             "text/csv",
             key="download-csv",
         )
 
-    patient_transposed = sklearn.preprocessing.normalize(
-        np.array(patient_df_info["mean_score"]).reshape(1, -1), norm="l1"
-    )
-    patient_nmf_umap = umap.transform(pd.DataFrame(patient_transposed))
-    with st.expander("See projection in cohort"):
-        umap_cohort["dist"] = abs(umap_cohort["x"] - patient_nmf_umap[0, 0]) + abs(
-            umap_cohort["y"] - patient_nmf_umap[0, 1]
-        )
-        closest_patient = umap_cohort.nsmallest(3, "dist")
-        st.write("Closest patients in the cohort are: ", closest_patient)
-        st.write("Closest patient: ", cohort.loc[closest_patient.index[0]])
-        st.write(
-            get_hpo_name_list(
-                cohort.loc[closest_patient.index[0]].hpo_list.split(","),
-                hp_onto,
-            )
-        )
-
-        cluster_selected = cluster_info[str(closest_patient["cluster"].values[0])]
-        st.write("Selected cluster: ", closest_patient["cluster"].values[0])
-        st.write("Number of patient in cluster: ", cluster_selected["n_patients"])
-
-        gene_in_cluster = pd.DataFrame.from_dict(
-            dict(Counter(cluster_selected["gene_list"])), orient="index"
-        )
-        gene_in_cluster.columns = ["count"]
         if gene_diag:
-            if gene_diag in gene_in_cluster.index:
-                st.write("Gene diag in cluster", gene_in_cluster.loc[gene_diag, :])
+            if int(ncbi[gene_diag]) in results_sum_add.index:
+                st.write(
+                    "Gene ID rank:",
+                    results_sum_add.loc[int(ncbi[gene_diag]), "rank"],
+                    "  |  ",
+                    "Gene ID count:",
+                    round(results_sum_add.loc[int(ncbi[gene_diag]), "sum"], 4),
+                )
+                st.write(
+                    "Gene ID phenotype specificity:",
+                    get_phenotype_specificity(gene_diag, results_sum_add),
+                )
+            else:
+                st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
 
-        st.write(
-            "Gene(s) involved in cluster: ",
-            gene_in_cluster.sort_values("count", ascending=False),
+        st.header("Phenotype matching by groups of symptoms")
+
+        patient_df = (
+            pd.DataFrame(reduced)
+            .set_index(data.index)
+            .apply(lambda x: sum((x - patient_nmf) ** 2), axis=1)
         )
 
-        group_involved = cluster_selected["group"]
-        if (
-            isinstance(group_involved, float)
-            and math.isnan(float(group_involved)) == False
-        ):
-            topic_involved = topic.loc[group_involved, :]
-            st.write("Group(s) of symptoms statistically enriched: ", topic_involved)
-        elif isinstance(group_involved, str):
-            group_list = [int(x) for x in cluster_selected["group"].split(",")]
-            topic_involved = topic.loc[group_list, :]
-            st.write("Group(s) of symptoms statistically enriched: ", topic_involved)
-
-        dict_count_print = {}
-        dict_count = dict(Counter(cluster_selected["hpo_list"]))
-        dict_count_sorted = sorted(dict_count.items(), key=lambda x: x[1], reverse=True)
-        for element in dict_count_sorted:
-            dict_count_print[element[0]] = {
-                "description": hp_onto[element[0]]["name"],
-                "count": element[1],
-            }
-        st.write(
-            "HPOs declared in cluster:",
-            pd.DataFrame.from_dict(dict_count_print, orient="index"),
+        witness_df = (
+            pd.DataFrame(reduced)
+            .set_index(data.index)
+            .apply(lambda x: sum((x - witness_nmf) ** 2), axis=1)
         )
-    sim_dict, hpo_list_add = get_similar_terms(hpo_list, similarity_terms_dict)
-    similar_list = list(set(hpo_list_add) - set(hpo_list))
-    similar_list_desc = get_hpo_name_list(similar_list, hp_onto)
-    if similar_list_desc:
-        with st.expander("See symptoms with similarity > 80%"):
-            similar_list_desc_df = pd.DataFrame.from_dict(
-                similar_list_desc, orient="index"
-            )
-            similar_list_desc_df.columns = ["description"]
-            st.write(similar_list_desc_df)
 
-    st.header("Phenotype matching by similarity of symptoms")
-    results_sum_add = score_sim_add(hpo_list_add, data, sim_dict)
-    results_sum_add["rank"] = (
-        results_sum_add["sum"].rank(ascending=False, method="max").astype(int)
-    )
-    cols = results_sum_add.columns.tolist()
-    cols = cols[-2:] + cols[:-2]
-    match_sim = results_sum_add[cols].sort_values(by=["sum"], ascending=False)
-    st.dataframe(match_sim[match_sim["sum"] > 0.01])
+        case_df = pd.DataFrame(patient_df - witness_df)
+        case_df.columns = ["score"]
+        case_df["score_norm"] = abs(case_df["score"] - case_df["score"].max())
+        # case_df["frequency"] = matrix_frequency["variant_number"]
+        case_df["sum"] = case_df["score_norm"]  # + case_df["frequency"]
+        case_df_sort = case_df.sort_values(by="sum", ascending=False)
+        case_df_sort["rank"] = (
+            case_df_sort["sum"].rank(ascending=False, method="max").astype(int)
+        )
+        case_df_sort["gene_symbol"] = case_df_sort.index.to_series().apply(get_symbol)
+        match_nmf = case_df_sort[["gene_symbol", "rank", "sum"]]
+        st.dataframe(match_nmf[match_nmf["sum"] > 0.01])
 
-    match_sim_csv = convert_df(match_sim)
+        match_nmf_csv = convert_df(match_nmf)
 
-    st.download_button(
-        "Download matching results",
-        match_sim_csv,
-        "match_sim.tsv",
-        "text/csv",
-        key="download-csv",
-    )
+        st.download_button(
+            "Download matching results",
+            match_nmf_csv,
+            "match_groups.tsv",
+            "text/csv",
+            key="download-csv",
+        )
 
-    if gene_diag:
-        if int(ncbi[gene_diag]) in results_sum_add.index:
-            st.write(
-                "Gene ID rank:",
-                results_sum_add.loc[int(ncbi[gene_diag]), "rank"],
-                "  |  ",
-                "Gene ID count:",
-                round(results_sum_add.loc[int(ncbi[gene_diag]), "sum"], 4),
-            )
-            st.write(
-                "Gene ID phenotype specificity:",
-                get_phenotype_specificity(gene_diag, results_sum_add),
-            )
-        else:
-            st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
-
-    st.header("Phenotype matching by groups of symptoms")
-
-    patient_df = (
-        pd.DataFrame(reduced)
-        .set_index(data.index)
-        .apply(lambda x: sum((x - patient_nmf) ** 2), axis=1)
-    )
-
-    witness_df = (
-        pd.DataFrame(reduced)
-        .set_index(data.index)
-        .apply(lambda x: sum((x - witness_nmf) ** 2), axis=1)
-    )
-
-    case_df = pd.DataFrame(patient_df - witness_df)
-    case_df.columns = ["score"]
-    case_df["score_norm"] = abs(case_df["score"] - case_df["score"].max())
-    # case_df["frequency"] = matrix_frequency["variant_number"]
-    case_df["sum"] = case_df["score_norm"]  # + case_df["frequency"]
-    case_df_sort = case_df.sort_values(by="sum", ascending=False)
-    case_df_sort["rank"] = (
-        case_df_sort["sum"].rank(ascending=False, method="max").astype(int)
-    )
-    case_df_sort["gene_symbol"] = case_df_sort.index.to_series().apply(get_symbol)
-    match_nmf = case_df_sort[["gene_symbol", "rank", "sum"]]
-    st.dataframe(match_nmf[match_nmf["sum"] > 0.01])
-
-    match_nmf_csv = convert_df(match_nmf)
-
-    st.download_button(
-        "Download matching results",
-        match_nmf_csv,
-        "match_groups.tsv",
-        "text/csv",
-        key="download-csv",
-    )
-
-    if gene_diag:
-        if int(ncbi[gene_diag]) in case_df_sort.index:
-            st.write(
-                "Gene ID rank:",
-                case_df_sort.loc[int(ncbi[gene_diag]), "rank"],
-                "  |  ",
-                "Gene ID count:",
-                round(case_df_sort.loc[int(ncbi[gene_diag]), "sum"], 4),
-            )
-            st.write(
-                "Gene ID phenotype specificity:",
-                get_phenotype_specificity(gene_diag, case_df_sort),
-            )
-        else:
-            st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
+        if gene_diag:
+            if int(ncbi[gene_diag]) in case_df_sort.index:
+                st.write(
+                    "Gene ID rank:",
+                    case_df_sort.loc[int(ncbi[gene_diag]), "rank"],
+                    "  |  ",
+                    "Gene ID count:",
+                    round(case_df_sort.loc[int(ncbi[gene_diag]), "sum"], 4),
+                )
+                st.write(
+                    "Gene ID phenotype specificity:",
+                    get_phenotype_specificity(gene_diag, case_df_sort),
+                )
+            else:
+                st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
+    else:
+        st.write(
+            "No HPO terms provided in correct format.",
+        )
