@@ -49,12 +49,12 @@ image_chuga = Image.open("data/img/logo-chuga.png")
 st.sidebar.image(image_chuga, caption=None, width=60)
 
 
-@st.cache(max_entries=30)
+@st.cache(max_entries=50)
 def convert_df(df):
     return df.to_csv(sep="\t").encode("utf-8")
 
 
-@st.cache(allow_output_mutation=True, max_entries=30)
+@st.cache(allow_output_mutation=True, max_entries=50)
 def load_data():
     matrix = pd.read_csv(
         "data/resources/ohe_all_thesaurus_weighted.tsv.gz",
@@ -65,7 +65,7 @@ def load_data():
     return matrix
 
 
-@st.cache(allow_output_mutation=True, max_entries=30)
+@st.cache(allow_output_mutation=True, max_entries=50)
 def load_umap_cohort():
     matrix = pd.read_csv(
         "data/resources/umap_loc_cohort.tsv",
@@ -75,7 +75,7 @@ def load_umap_cohort():
     return matrix
 
 
-@st.cache(allow_output_mutation=True, max_entries=30)
+@st.cache(allow_output_mutation=True, max_entries=50)
 def load_cohort():
     matrix = pd.read_csv(
         "data/resources/cohort_diag.tsv",
@@ -85,7 +85,7 @@ def load_cohort():
 
 
 @st.cache(
-    hash_funcs={"Pickle": lambda _: None}, allow_output_mutation=True, max_entries=30
+    hash_funcs={"Pickle": lambda _: None}, allow_output_mutation=True, max_entries=50
 )
 def load_nmf_model():
     with open("data/resources/pheno_NMF_390_model_42.pkl", "rb") as pickle_file:
@@ -95,7 +95,7 @@ def load_nmf_model():
     return pheno_NMF, reduced
 
 
-@st.cache(allow_output_mutation=True, max_entries=30)
+@st.cache(allow_output_mutation=True, max_entries=50)
 def symbol_to_id_to_dict():
     # from NCBI
     ncbi_df = pd.read_csv("data/resources/Homo_sapiens.gene_info.gz", sep="\t")
@@ -108,7 +108,7 @@ def symbol_to_id_to_dict():
 
 
 @st.cache(
-    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=30
+    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=50
 )
 def load_hp_ontology():
     with open("data/resources/hpo_obo.json") as json_data:
@@ -117,7 +117,7 @@ def load_hp_ontology():
 
 
 @st.cache(
-    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=30
+    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=50
 )
 def load_cluster_data():
     with open("data/resources/cluster_info.json") as json_data:
@@ -125,7 +125,7 @@ def load_cluster_data():
     return data_dict
 
 
-@st.cache(allow_output_mutation=True, max_entries=30)
+@st.cache(allow_output_mutation=True, max_entries=50)
 def load_topic_data():
     topic = pd.read_csv(
         "data/resources/main_topics_hpo_390_42_filtered_norm_004.tsv",
@@ -136,7 +136,7 @@ def load_topic_data():
 
 
 @st.cache(
-    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=30
+    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=50
 )
 def load_similarity_dict():
     with open("data/resources/similarity_dict_threshold_80.json") as json_data:
@@ -145,7 +145,7 @@ def load_similarity_dict():
 
 
 @st.cache(
-    hash_funcs={"Pickle": lambda _: None}, allow_output_mutation=True, max_entries=30
+    hash_funcs={"Pickle": lambda _: None}, allow_output_mutation=True, max_entries=50
 )
 def load_projection():
     with open("data/resources/clustering_model.pkl", "rb") as pickle_file:
@@ -240,8 +240,9 @@ hpo = form.text_input(
     label="Provide your HPOs (separated by comma)",
     value="HP:0000107,HP:0000108,HP:0001407",
 )
-gene_diag = form.text_input(
-    label="(optional) Provide HGNC gene symbol to be tested", value="PKD1"
+gene_diag_input = form.text_input(
+    label="Optional: provide HGNC gene symbol to be tested (in CAPITAL format)",
+    value="PKD1",
 )
 
 
@@ -261,19 +262,32 @@ if submit_button:
 
     hpo_list_ini = hpo.strip().split(",")
 
-    # if gene_diag:
-    #    st.write("You selected gene id:", ncbi[gene_diag])
+    if gene_diag_input:
+        if gene_diag_input in ncbi.keys():
+            gene_diag = gene_diag_input
+        else:
+            st.write(
+                gene_diag_input
+                + " gene are not in our database. Please check gene name (need to be in CAPITAL format)."
+            )
+            gene_diag = None
+    else:
+        gene_diag = None
 
     hpo_list_up = []
     for hpo in hpo_list_ini:
         if hpo in ["HP:0000001"]:
             pass
         elif len(hpo) != 10:
-            st.write("Incorrect HPO format: " + hpo + ". Please check.")
+            st.write(
+                "Incorrect HPO format: "
+                + hpo
+                + ". Please check (7-digits terms with prefix HP:, and separed by commas)."
+            )
             pass
         elif hpo not in data.columns:
             pass
-            st.write(hpo + " not in current database. Please modify.")
+            st.write(hpo + " not available in current database. Please modify.")
         else:
             if data[hpo].astype(bool).sum(axis=0) != 0:
                 hpo_list_up.append(hpo)
