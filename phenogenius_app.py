@@ -201,6 +201,13 @@ def get_similar_terms(hpo_list, similarity_terms_dict):
     return hpo_list_w_simi, list(hpo_list_all)
 
 
+def score(hpo_list, matrix):
+    matrix_filter = matrix[hpo_list]
+    matrix_filter["sum"] = matrix_filter.sum(axis=1)
+    matrix_filter["gene_symbol"] = matrix_filter.index.to_series().apply(get_symbol)
+    return matrix_filter.sort_values("sum", ascending=False)
+
+
 def score_sim_add(hpo_list_add, matrix, sim_dict):
     matrix_filter = matrix[hpo_list_add]
     for key, value in sim_dict.items():
@@ -448,6 +455,42 @@ if submit_button:
                 )
                 similar_list_desc_df.columns = ["description"]
                 st.write(similar_list_desc_df)
+
+        st.header("Phenotype matching")
+        results_sum = score(hpo_list, data)
+        results_sum["rank"] = (
+            results_sum["sum"].rank(ascending=False, method="max").astype(int)
+        )
+        cols = results_sum.columns.tolist()
+        cols = cols[-2:] + cols[:-2]
+        match = results_sum[cols].sort_values(by=["sum"], ascending=False)
+        st.dataframe(match[match["sum"] > 0.01])
+
+        match_csv = convert_df(match)
+
+        st.download_button(
+            "Download matching results",
+            match_csv,
+            "match.tsv",
+            "text/csv",
+            key="download-csv",
+        )
+
+        if gene_diag:
+            if int(ncbi[gene_diag]) in results_sum.index:
+                st.write(
+                    "Gene ID rank:",
+                    results_sum.loc[int(ncbi[gene_diag]), "rank"],
+                    "  |  ",
+                    "Gene ID count:",
+                    round(results_sum.loc[int(ncbi[gene_diag]), "sum"], 4),
+                )
+                st.write(
+                    "Gene ID phenotype specificity:",
+                    get_phenotype_specificity(gene_diag, results_sum),
+                )
+            else:
+                st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
 
         st.header("Phenotype matching by similarity of symptoms")
         results_sum_add = score_sim_add(hpo_list_add, data, sim_dict)
