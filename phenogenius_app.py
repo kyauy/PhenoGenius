@@ -222,12 +222,12 @@ def get_phenotype_specificity(gene_diag, data_patient):
     max_rank = data_patient["rank"].max()
     if rank == max_rank:
         return "D - the reported phenotype is NOT consistent with what is expected for the gene/genomic region or not consistent in general."
-    elif rank < 100:
-        return "A - the reported phenotype is highly specific and relatively unique to the gene (top 100)."
-    elif rank < 1000:
-        return "B - the reported phenotype is consistent with the gene, is highly specific, but not necessarily unique to the gene (top 1000)."
+    elif rank < 41:
+        return "A - the reported phenotype is highly specific and relatively unique to the gene (top 40, 50 perc of diagnosis in PhenoGenius cohort)."
+    elif rank < 250:
+        return "B - the reported phenotype is consistent with the gene, is highly specific, but not necessarily unique to the gene (top 250, 75 perc of diagnosis in PhenoGenius cohort)."
     else:
-        return "C - the reported phenotype is consistent with the gene, but not highly specific and/or with high genetic heterogeneity."
+        return "C - the phenotype is reported with limited association with the gene, not highly specific and/or with high genetic heterogeneity."
 
 
 def get_relatives_list(hpo_list, hp_onto):
@@ -485,6 +485,7 @@ if submit_button:
                     "Gene ID count:",
                     round(results_sum.loc[int(ncbi[gene_diag]), "sum"], 4),
                 )
+                st.write(results_sum.loc[[int(ncbi[gene_diag])]])
                 st.write(
                     "Gene ID phenotype specificity:",
                     get_phenotype_specificity(gene_diag, results_sum),
