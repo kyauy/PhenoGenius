@@ -116,6 +116,14 @@ def load_hp_ontology():
     return data_dict
 
 
+@st.cache(allow_output_mutation=True, max_entries=50)
+def hpo_description_to_id(hp_onto):
+    data_dict = {}
+    for key, value in hp_onto.items():
+        data_dict[value["name"]] = key
+    return data_dict
+
+
 @st.cache(
     hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=50
 )
@@ -242,22 +250,49 @@ def get_relatives_list(hpo_list, hp_onto):
     return list(set(all_list))
 
 
-form = st.form(key="my_form")
-hpo = form.text_input(
-    label="Provide your HPOs (separated by comma)",
-    value="HP:0000107,HP:0000108,HP:0001407",
-)
-gene_diag_input = form.text_input(
-    label="Optional: provide HGNC gene symbol to be tested (in CAPITAL format)",
-    value="PKD1",
-)
+def get_hpo_id(hpo_list):
+    hpo_id = []
+    for description in hpo_list:
+        hpo_id.append(hp_desc_id[description])
+    return ",".join(hpo_id)
 
 
-submit_button = form.form_submit_button(label="Submit")
+hp_onto = load_hp_ontology()
+hp_desc_id = hpo_description_to_id(hp_onto)
+ncbi, symbol = symbol_to_id_to_dict()
+
+
+# hpo = form.text_input(
+#    label="Provide your HPOs (separated by comma)",
+#    value="HP:0000107,HP:0000108,HP:0001407",
+# )
+
+with st.form("my_form"):
+    hpo_raw = st.multiselect(
+        "Provide your HPOs", list(hp_desc_id.keys()), ["Renal cyst", "Hepatic cysts"]
+    )
+
+    gene_diag_input = st.multiselect(
+        "Optional: provide HGNC gene symbol to be tested",
+        options=list(ncbi.keys()),
+        default=["PKD1"],
+        max_selections=1,
+    )
+
+    submit_button = st.form_submit_button(
+        label="Submit",
+    )
+
+
+# form = st.form(key="my_form")
+# gene_diag_input = form.text_input(
+#    label="Optional: provide HGNC gene symbol to be tested (in CAPITAL format)",
+#    value="PKD1",
+# )
+
 
 if submit_button:
-    ncbi, symbol = symbol_to_id_to_dict()
-    hp_onto = load_hp_ontology()
+    hpo = get_hpo_id(hpo_raw)
     data = load_data()
     pheno_NMF, reduced = load_nmf_model()
     cluster, umap = load_projection()
@@ -270,8 +305,8 @@ if submit_button:
     hpo_list_ini = hpo.strip().split(",")
 
     if gene_diag_input:
-        if gene_diag_input in ncbi.keys():
-            gene_diag = gene_diag_input
+        if gene_diag_input[0] in ncbi.keys():
+            gene_diag = gene_diag_input[0]
         else:
             st.write(
                 gene_diag_input
@@ -377,7 +412,7 @@ if submit_button:
                 match_proj_csv,
                 "clin_desc_projected.tsv",
                 "text/csv",
-                key="download-csv",
+                key="download-csv-proj",
             )
 
         patient_transposed = sklearn.preprocessing.normalize(
@@ -473,7 +508,7 @@ if submit_button:
             match_csv,
             "match.tsv",
             "text/csv",
-            key="download-csv",
+            key="download-csv-match",
         )
 
         if gene_diag:
@@ -510,7 +545,7 @@ if submit_button:
             match_sim_csv,
             "match_sim.tsv",
             "text/csv",
-            key="download-csv",
+            key="download-csv-match-sim",
         )
 
         if gene_diag:
@@ -563,7 +598,7 @@ if submit_button:
             match_nmf_csv,
             "match_groups.tsv",
             "text/csv",
-            key="download-csv",
+            key="download-csv-match-groups",
         )
 
         if gene_diag:
