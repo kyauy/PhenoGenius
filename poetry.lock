@@ -1406,15 +1406,14 @@ docs = ["sphinx", "nbconvert", "jupyter-client", "ipykernel", "matplotlib", "nbf
 
 [[package]]
 name = "streamlit"
-version = "1.11.1"
+version = "1.15.1"
 description = "The fastest way to build data apps in Python"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.7, !=3.9.7"
 
 [package.dependencies]
 altair = ">=3.2.0"
-attrs = ">=16.0.0"
 blinker = ">=1.0.0"
 cachetools = ">=4.0"
 click = ">=7.0"
