@@ -117,7 +117,7 @@ def load_hp_ontology():
 
 
 @st.cache(allow_output_mutation=True, max_entries=50)
-def hpo_description_to_id(hp_onto):
+def hpo_description_to_id():
     data_dict = {}
     for key, value in hp_onto.items():
         data_dict[value["name"]] = key
@@ -258,7 +258,7 @@ def get_hpo_id(hpo_list):
 
 
 hp_onto = load_hp_ontology()
-hp_desc_id = hpo_description_to_id(hp_onto)
+hp_desc_id = hpo_description_to_id()
 ncbi, symbol = symbol_to_id_to_dict()
 
 
