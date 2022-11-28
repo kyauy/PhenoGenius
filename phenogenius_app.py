@@ -493,13 +493,15 @@ if submit_button:
 
         st.header("Phenotype matching")
         results_sum = score(hpo_list, data)
+        results_sum["matchs"] = results_sum[hpo_list].astype(bool).sum(axis=1)
+        results_sum["score"] = results_sum["matchs"] + results_sum["sum"]
         results_sum["rank"] = (
-            results_sum["sum"].rank(ascending=False, method="max").astype(int)
+            results_sum["score"].rank(ascending=False, method="max").astype(int)
         )
         cols = results_sum.columns.tolist()
-        cols = cols[-2:] + cols[:-2]
-        match = results_sum[cols].sort_values(by=["sum"], ascending=False)
-        st.dataframe(match[match["sum"] > 0.01])
+        cols = cols[-4:] + cols[:-4]
+        match = results_sum[cols].sort_values(by=["score"], ascending=False)
+        st.dataframe(match[match["score"] > 1.01].drop(columns=["sum"]))
 
         match_csv = convert_df(match)
 
