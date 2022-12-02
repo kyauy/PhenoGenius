@@ -8,6 +8,7 @@ import pickle as pk
 from collections import Counter
 import math
 import sklearn
+from plotnine import *
 
 # -- Set page config
 apptitle = "PhenoGenius"
@@ -515,6 +516,35 @@ if submit_button:
 
         if gene_diag:
             if int(ncbi[gene_diag]) in results_sum.index:
+                p = (
+                    ggplot(match, aes("score"))
+                    + geom_density()
+                    + geom_vline(
+                        xintercept=results_sum.loc[int(ncbi[gene_diag]), "score"],
+                        linetype="dashed",
+                        color="red",
+                        size=1.5,
+                    )
+                    + ggtitle("Matching score distribution")
+                    + xlab("Gene matching score")
+                    + ylab("% of genes")
+                    + theme_bw()
+                    + theme(
+                        text=element_text(size=12),
+                        figure_size=(5, 5),
+                        axis_ticks=element_line(colour="black", size=4),
+                        axis_line=element_line(colour="black", size=2),
+                        axis_text_x=element_text(angle=45, hjust=1),
+                        axis_text_y=element_text(angle=60, hjust=1),
+                        subplots_adjust={"wspace": 0.1},
+                        legend_position=(0.7, 0.35),
+                    )
+                )
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.pyplot(ggplot.draw(p))
+
                 st.write(
                     "Gene ID rank:",
                     results_sum.loc[int(ncbi[gene_diag]), "rank"],
@@ -552,6 +582,35 @@ if submit_button:
 
         if gene_diag:
             if int(ncbi[gene_diag]) in results_sum_add.index:
+                p2 = (
+                    ggplot(match_sim, aes("sum"))
+                    + geom_density()
+                    + geom_vline(
+                        xintercept=results_sum_add.loc[int(ncbi[gene_diag]), "sum"],
+                        linetype="dashed",
+                        color="red",
+                        size=1.5,
+                    )
+                    + ggtitle("Matching score distribution")
+                    + xlab("Gene matching score")
+                    + ylab("% of genes")
+                    + theme_bw()
+                    + theme(
+                        text=element_text(size=12),
+                        figure_size=(5, 5),
+                        axis_ticks=element_line(colour="black", size=4),
+                        axis_line=element_line(colour="black", size=2),
+                        axis_text_x=element_text(angle=45, hjust=1),
+                        axis_text_y=element_text(angle=60, hjust=1),
+                        subplots_adjust={"wspace": 0.1},
+                        legend_position=(0.7, 0.35),
+                    )
+                )
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.pyplot(ggplot.draw(p2))
+
                 st.write(
                     "Gene ID rank:",
                     results_sum_add.loc[int(ncbi[gene_diag]), "rank"],
@@ -605,6 +664,36 @@ if submit_button:
 
         if gene_diag:
             if int(ncbi[gene_diag]) in case_df_sort.index:
+
+                p3 = (
+                    ggplot(match_nmf, aes("sum"))
+                    + geom_density()
+                    + geom_vline(
+                        xintercept=case_df_sort.loc[int(ncbi[gene_diag]), "sum"],
+                        linetype="dashed",
+                        color="red",
+                        size=1.5,
+                    )
+                    + ggtitle("Matching score distribution")
+                    + xlab("Gene matching score")
+                    + ylab("% of genes")
+                    + theme_bw()
+                    + theme(
+                        text=element_text(size=12),
+                        figure_size=(5, 5),
+                        axis_ticks=element_line(colour="black", size=4),
+                        axis_line=element_line(colour="black", size=2),
+                        axis_text_x=element_text(angle=45, hjust=1),
+                        axis_text_y=element_text(angle=60, hjust=1),
+                        subplots_adjust={"wspace": 0.1},
+                        legend_position=(0.7, 0.35),
+                    )
+                )
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.pyplot(ggplot.draw(p3))
+
                 st.write(
                     "Gene ID rank:",
                     case_df_sort.loc[int(ncbi[gene_diag]), "rank"],
