@@ -357,10 +357,12 @@ if submit_button:
                         get_hpo_name(hpo_to_test),
                     )
     hpo_list = list(set(hpo_list_up))
+    del hpo_list_up
 
     if hpo_list:
         with st.expander("See HPO inputs"):
             st.write(get_hpo_name_list(hpo_list_ini, hp_onto))
+            del hpo_list_ini
 
         hpo_list_name = get_relatives_list(hpo_list, hp_onto)
 
@@ -401,6 +403,11 @@ if submit_button:
             ["mean_score", "main_term", "n_hpo", "hpo_name", "hpo_list", "weight"]
         ].sort_values("mean_score", ascending=False)
 
+        del case_sugg_df
+        del patient_sugg_df
+        del witness_sugg_df
+        del patient
+
         with st.expander("See projection in groups of symptoms dimension*"):
             st.dataframe(patient_df_info_write)
             st.write(
@@ -419,11 +426,16 @@ if submit_button:
         patient_transposed = sklearn.preprocessing.normalize(
             np.array(patient_df_info["mean_score"]).reshape(1, -1), norm="l1"
         )
+        del patient_df_info
+
         patient_nmf_umap = umap.transform(pd.DataFrame(patient_transposed))
+        del patient_transposed
+
         with st.expander("See projection in cohort"):
             umap_cohort["dist"] = abs(umap_cohort["x"] - patient_nmf_umap[0, 0]) + abs(
                 umap_cohort["y"] - patient_nmf_umap[0, 1]
             )
+            del patient_nmf_umap
             closest_patient = umap_cohort.nsmallest(3, "dist")
             st.write("Closest patients in the cohort are: ", closest_patient)
             st.write("Closest patient: ", cohort.loc[closest_patient.index[0]])
@@ -437,6 +449,7 @@ if submit_button:
             cluster_selected = cluster_info[str(closest_patient["cluster"].values[0])]
             st.write("Selected cluster: ", closest_patient["cluster"].values[0])
             st.write("Number of patient in cluster: ", cluster_selected["n_patients"])
+            del closest_patient
 
             gene_in_cluster = pd.DataFrame.from_dict(
                 dict(Counter(cluster_selected["gene_list"])), orient="index"
@@ -450,13 +463,14 @@ if submit_button:
                 "Gene(s) involved in cluster: ",
                 gene_in_cluster.sort_values("count", ascending=False),
             )
+            del gene_in_cluster
 
             group_involved = cluster_selected["group"]
             if (
                 isinstance(group_involved, float)
                 and math.isnan(float(group_involved)) == False
             ):
-                topic_involved = topic.loc[group_involved, :]
+                topic_involved = topic.loc[topic_involved, :]
                 st.write(
                     "Group(s) of symptoms statistically enriched: ", topic_involved
                 )
@@ -466,12 +480,15 @@ if submit_button:
                 st.write(
                     "Group(s) of symptoms statistically enriched: ", topic_involved
                 )
+            del topic_involved
+            del group_involved
 
             dict_count_print = {}
             dict_count = dict(Counter(cluster_selected["hpo_list"]))
             dict_count_sorted = sorted(
                 dict_count.items(), key=lambda x: x[1], reverse=True
             )
+            del cluster_selected
             for element in dict_count_sorted:
                 dict_count_print[element[0]] = {
                     "description": hp_onto[element[0]]["name"],
@@ -481,6 +498,9 @@ if submit_button:
                 "HPOs declared in cluster:",
                 pd.DataFrame.from_dict(dict_count_print, orient="index"),
             )
+            del dict_count
+            del dict_count_print
+            del dict_count_sorted
         sim_dict, hpo_list_add = get_similar_terms(hpo_list, similarity_terms_dict)
         similar_list = list(set(hpo_list_add) - set(hpo_list))
         similar_list_desc = get_hpo_name_list(similar_list, hp_onto)
@@ -491,6 +511,9 @@ if submit_button:
                 )
                 similar_list_desc_df.columns = ["description"]
                 st.write(similar_list_desc_df)
+                del similar_list_desc_df
+        del similar_list
+        del similar_list_desc
 
         st.header("Phenotype matching")
         results_sum = score(hpo_list, data)
@@ -503,7 +526,6 @@ if submit_button:
         cols = cols[-4:] + cols[:-4]
         match = results_sum[cols].sort_values(by=["score"], ascending=False)
         st.dataframe(match[match["score"] > 1.01].drop(columns=["sum"]))
-
         match_csv = convert_df(match)
 
         st.download_button(
@@ -559,6 +581,9 @@ if submit_button:
                 )
             else:
                 st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
+        del results_sum
+        del match
+        del p
 
         st.header("Phenotype matching by similarity of symptoms")
         results_sum_add = score_sim_add(hpo_list_add, data, sim_dict)
@@ -625,6 +650,12 @@ if submit_button:
             else:
                 st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
 
+        del sim_dict
+        del hpo_list_add
+        del results_sum_add
+        del match_sim
+        del p2
+
         st.header("Phenotype matching by groups of symptoms")
 
         patient_df = (
@@ -638,6 +669,9 @@ if submit_button:
             .set_index(data.index)
             .apply(lambda x: sum((x - witness_nmf) ** 2), axis=1)
         )
+        del patient_nmf
+        del witness
+        del witness_nmf
 
         case_df = pd.DataFrame(patient_df - witness_df)
         case_df.columns = ["score"]
@@ -664,7 +698,6 @@ if submit_button:
 
         if gene_diag:
             if int(ncbi[gene_diag]) in case_df_sort.index:
-
                 p3 = (
                     ggplot(match_nmf, aes("sum"))
                     + geom_density()
@@ -707,6 +740,10 @@ if submit_button:
                 )
             else:
                 st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
+            del case_df_sort
+            del p3
+            del match_nmf
+            del case_df
     else:
         st.write(
             "No HPO terms provided in correct format.",
