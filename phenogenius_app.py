@@ -284,7 +284,7 @@ with st.form("my_form"):
         )
     with c2:
         hpo = st.text_input(
-            "or copy/paste your HPOs, separated with comma",
+            "copy/paste your HPOs, separated with comma",
             "HP:0000107,HP:0001407",
         )
     gene_diag_input = st.multiselect(
