@@ -13,7 +13,12 @@ from plotnine import *
 # -- Set page config
 apptitle = "PhenoGenius"
 
-st.set_page_config(page_title=apptitle, page_icon=":genie:", layout="wide")
+st.set_page_config(
+    page_title=apptitle,
+    page_icon=":genie:",
+    layout="wide",
+    initial_sidebar_state="auto",
+)
 
 # -- Set Sidebar
 image_pg = Image.open("data/img/phenogenius.png")
@@ -268,22 +273,29 @@ ncbi, symbol = symbol_to_id_to_dict()
 #    value="HP:0000107,HP:0000108,HP:0001407",
 # )
 
-with st.form("my_form"):
-    hpo_raw = st.multiselect(
-        "Provide your HPOs", list(hp_desc_id.keys()), ["Renal cyst", "Hepatic cysts"]
-    )
 
+with st.form("my_form"):
+    c1, c2 = st.columns(2)
+    with c1:
+        hpo_raw = st.multiselect(
+            "Select interactively your HPOs or...",
+            list(hp_desc_id.keys()),
+            ["Renal cyst", "Hepatic cysts"],
+        )
+    with c2:
+        hpo = st.text_input(
+            "or copy/paste your HPOs, separated with comma",
+            "HP:0000107,HP:0001407",
+        )
     gene_diag_input = st.multiselect(
         "Optional: provide HGNC gene symbol to be tested",
         options=list(ncbi.keys()),
         default=["PKD1"],
         max_selections=1,
     )
-
     submit_button = st.form_submit_button(
         label="Submit",
     )
-
 
 # form = st.form(key="my_form")
 # gene_diag_input = form.text_input(
@@ -291,9 +303,9 @@ with st.form("my_form"):
 #    value="PKD1",
 # )
 
-
 if submit_button:
-    hpo = get_hpo_id(hpo_raw)
+    if hpo_raw != ["Renal cyst", "Hepatic cysts"] and len(hpo_raw) > 0:
+        hpo = get_hpo_id(hpo_raw)
     data = load_data()
     pheno_NMF, reduced = load_nmf_model()
     cluster, umap = load_projection()
@@ -480,7 +492,7 @@ if submit_button:
                 st.write(
                     "Group(s) of symptoms statistically enriched: ", topic_involved
                 )
-            del topic_involved
+                del topic_involved
             del group_involved
 
             dict_count_print = {}
@@ -501,6 +513,7 @@ if submit_button:
             del dict_count
             del dict_count_print
             del dict_count_sorted
+
         sim_dict, hpo_list_add = get_similar_terms(hpo_list, similarity_terms_dict)
         similar_list = list(set(hpo_list_add) - set(hpo_list))
         similar_list_desc = get_hpo_name_list(similar_list, hp_onto)
@@ -744,6 +757,7 @@ if submit_button:
             del p3
             del match_nmf
             del case_df
+
     else:
         st.write(
             "No HPO terms provided in correct format.",
