@@ -592,11 +592,12 @@ if submit_button:
                     "Gene ID phenotype specificity:",
                     get_phenotype_specificity(gene_diag, results_sum),
                 )
+                del p
+
             else:
                 st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
         del results_sum
         del match
-        del p
 
         st.header("Phenotype matching by similarity of symptoms")
         results_sum_add = score_sim_add(hpo_list_add, data, sim_dict)
@@ -660,6 +661,8 @@ if submit_button:
                     "Gene ID phenotype specificity:",
                     get_phenotype_specificity(gene_diag, results_sum_add),
                 )
+                del p2
+
             else:
                 st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
 
@@ -667,7 +670,6 @@ if submit_button:
         del hpo_list_add
         del results_sum_add
         del match_sim
-        del p2
 
         st.header("Phenotype matching by groups of symptoms")
 
@@ -751,10 +753,10 @@ if submit_button:
                     "Gene ID phenotype specificity:",
                     get_phenotype_specificity(gene_diag, case_df_sort),
                 )
+                del p3
             else:
                 st.write("Gene ID rank:", " Gene not available in PhenoGenius database")
             del case_df_sort
-            del p3
             del match_nmf
             del case_df
 
