@@ -18,8 +18,8 @@ If you use PhenoGenius, please cite:
 - Requirements
 
 ```bash
-python == 3.8
-poetry
+python == 3.8 #(pyenv install 3.8)
+poetry #(https://python-poetry.org/docs/#installation)
 ```
 
 - Install dependencies
