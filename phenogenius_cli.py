@@ -87,7 +87,33 @@ def score_sim_add(hpo_list_add, matrix, sim_dict, symbol):
     )
     return matrix_filter.sort_values("sum", ascending=False)
 
+def get_hpo_implicated_dict(data, hpo_list, hp_onto):
+    data_filter = data[hpo_list]
+    data_filter_dict = data_filter.to_dict(orient='index')
+    annot_dict = {}
+    for key, value in data_filter_dict.items():
+        hpo_implicated = []
+        hpo_description_implicated = []
+        for k, v in value.items():
+            if v > 0:
+                hpo_implicated.append({k:round(v,1)})
+                hpo_description_implicated.append({hp_onto[k]['name']:round(v,1)})
 
+        annot_dict[key] = {"hpo_implicated": hpo_implicated, "hpo_description_implicated": hpo_description_implicated}
+    return annot_dict
+
+def add_hpo_implicated(x, annot_dict):
+    if x in annot_dict.keys():
+        return annot_dict[x]["hpo_implicated"]
+    else:
+        return None
+
+def add_hpo_description_implicated(x, annot_dict):
+    if x in annot_dict.keys():
+        return annot_dict[x]["hpo_description_implicated"]
+    else:
+        return None
+    
 @click.command()
 @click.option("--result_file", default="match.tsv")
 @click.option("--hpo_list", default=None)
@@ -120,6 +146,9 @@ def evaluate_matching(result_file, hpo_list):
                     else:
                         hpo_list_up.append(hpo_to_test)
         hpo_list = list(set(hpo_list_up))
+
+        annot_dict = get_hpo_implicated_dict(data, hpo_list, hp_onto)
+
         if len(hpo_list) < 6:
             logging.info("INFO: selected symptom interaction model - NMF")
             pandarallel.initialize(nb_workers=4)
@@ -159,6 +188,8 @@ def evaluate_matching(result_file, hpo_list):
             match_nmf_filter = match_nmf[match_nmf["sum"] > 0.01].reset_index()
             match_nmf_filter.columns = ["gene_id", "gene_symbol", "rank", "sum"]
             match_nmf_filter["sum"] = match_nmf_filter["sum"].round(2)
+            match_nmf_filter["hpo_implicated"] = match_nmf_filter["gene_id"].apply(add_hpo_implicated, args=(annot_dict,))
+            match_nmf_filter["hpo_description_implicated"] = match_nmf_filter["gene_id"].apply(add_hpo_description_implicated, args=(annot_dict,))
             match_nmf_filter.to_csv(result_file, sep="\t", index=False)
 
         else:
@@ -176,6 +207,8 @@ def evaluate_matching(result_file, hpo_list):
             match_sim_filter_print = match_sim_filter.iloc[:, [0, 1, 2, -1]]
             match_sim_filter_print.columns = ["gene_id", "gene_symbol", "rank", "sum"]
             match_sim_filter_print["sum"] = match_sim_filter_print["sum"].round(2)
+            match_sim_filter_print["hpo_implicated"] = match_sim_filter_print["gene_id"].apply(add_hpo_implicated, args=(annot_dict,))
+            match_sim_filter_print["hpo_description_implicated"] = match_sim_filter_print["gene_id"].apply(add_hpo_description_implicated, args=(annot_dict,))
             match_sim_filter_print.to_csv(result_file, sep="\t", index=False)
 
 
