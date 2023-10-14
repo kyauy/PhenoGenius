@@ -55,12 +55,12 @@ image_chuga = Image.open("data/img/logo-chuga.png")
 st.sidebar.image(image_chuga, caption=None, width=60)
 
 
-@st.cache(max_entries=50)
+@st.cache_data(max_entries=50)
 def convert_df(df):
     return df.to_csv(sep="\t").encode("utf-8")
 
 
-@st.cache(allow_output_mutation=True, max_entries=50)
+@st.cache_data(max_entries=50)
 def load_data():
     matrix = pd.read_csv(
         "data/resources/ohe_all_thesaurus_weighted.tsv.gz",
@@ -71,7 +71,7 @@ def load_data():
     return matrix
 
 
-@st.cache(allow_output_mutation=True, max_entries=50)
+@st.cache_data(max_entries=50)
 def load_umap_cohort():
     matrix = pd.read_csv(
         "data/resources/umap_loc_cohort.tsv",
@@ -81,7 +81,7 @@ def load_umap_cohort():
     return matrix
 
 
-@st.cache(allow_output_mutation=True, max_entries=50)
+@st.cache_data( max_entries=50)
 def load_cohort():
     matrix = pd.read_csv(
         "data/resources/cohort_diag.tsv",
@@ -90,8 +90,8 @@ def load_cohort():
     return matrix
 
 
-@st.cache(
-    hash_funcs={"Pickle": lambda _: None}, allow_output_mutation=True, max_entries=50
+@st.cache_data(
+    hash_funcs={"Pickle": lambda _: None}, max_entries=50
 )
 def load_nmf_model():
     with open("data/resources/pheno_NMF_390_model_42.pkl", "rb") as pickle_file:
@@ -101,7 +101,7 @@ def load_nmf_model():
     return pheno_NMF, reduced
 
 
-@st.cache(allow_output_mutation=True, max_entries=50)
+@st.cache_data(max_entries=50)
 def symbol_to_id_to_dict():
     # from NCBI
     ncbi_df = pd.read_csv("data/resources/Homo_sapiens.gene_info.gz", sep="\t")
@@ -113,8 +113,8 @@ def symbol_to_id_to_dict():
     return ncbi_to_dict_ncbi, ncbi_to_dict
 
 
-@st.cache(
-    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=50
+@st.cache_data(
+    hash_funcs={"_json.Scanner": hash}, max_entries=50
 )
 def load_hp_ontology():
     with open("data/resources/hpo_obo.json") as json_data:
@@ -122,7 +122,7 @@ def load_hp_ontology():
     return data_dict
 
 
-@st.cache(allow_output_mutation=True, max_entries=50)
+@st.cache_data(max_entries=50)
 def hpo_description_to_id():
     data_dict = {}
     for key, value in hp_onto.items():
@@ -130,8 +130,8 @@ def hpo_description_to_id():
     return data_dict
 
 
-@st.cache(
-    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=50
+@st.cache_data(
+    hash_funcs={"_json.Scanner": hash}, max_entries=50
 )
 def load_cluster_data():
     with open("data/resources/cluster_info.json") as json_data:
@@ -139,7 +139,7 @@ def load_cluster_data():
     return data_dict
 
 
-@st.cache(allow_output_mutation=True, max_entries=50)
+@st.cache_data(max_entries=50)
 def load_topic_data():
     topic = pd.read_csv(
         "data/resources/main_topics_hpo_390_42_filtered_norm_004.tsv",
@@ -149,8 +149,8 @@ def load_topic_data():
     return topic
 
 
-@st.cache(
-    hash_funcs={"_json.Scanner": hash}, allow_output_mutation=True, max_entries=50
+@st.cache_data(
+    hash_funcs={"_json.Scanner": hash}, max_entries=50
 )
 def load_similarity_dict():
     with open("data/resources/similarity_dict_threshold_80.json") as json_data:
@@ -158,15 +158,15 @@ def load_similarity_dict():
     return data_dict
 
 
-@st.cache(
-    hash_funcs={"Pickle": lambda _: None}, allow_output_mutation=True, max_entries=50
-)
-def load_projection():
-    with open("data/resources/clustering_model.pkl", "rb") as pickle_file:
-        cluster = pk.load(pickle_file)
-    with open("data/resources/umap_projection.pkl", "rb") as pickle_file:
-        umap = pk.load(pickle_file)
-    return cluster, umap
+# @st.cache_data(
+#     hash_funcs={"Pickle": lambda _: None}, max_entries=50
+# )
+# def load_projection():
+#     with open("data/resources/clustering_model.pkl", "rb") as pickle_file:
+#         cluster = pk.load(pickle_file)
+#     with open("data/resources/umap_projection.pkl", "rb") as pickle_file:
+#         umap = pk.load(pickle_file)
+#     return cluster, umap
 
 
 def get_symbol(gene):
@@ -308,8 +308,8 @@ if submit_button:
         hpo = get_hpo_id(hpo_raw)
     data = load_data()
     pheno_NMF, reduced = load_nmf_model()
-    cluster, umap = load_projection()
-    umap_cohort = load_umap_cohort()
+#    cluster, umap = load_projection()
+#    umap_cohort = load_umap_cohort()
     cohort = load_cohort()
     cluster_info = load_cluster_data()
     topic = load_topic_data()
@@ -435,88 +435,89 @@ if submit_button:
                 key="download-csv-proj",
             )
 
-        patient_transposed = sklearn.preprocessing.normalize(
-            np.array(patient_df_info["mean_score"]).reshape(1, -1), norm="l1"
-        )
-        del patient_df_info
-
-        patient_nmf_umap = umap.transform(pd.DataFrame(patient_transposed))
-        del patient_transposed
-
-        with st.expander("See projection in cohort"):
-            umap_cohort["dist"] = abs(umap_cohort["x"] - patient_nmf_umap[0, 0]) + abs(
-                umap_cohort["y"] - patient_nmf_umap[0, 1]
-            )
-            del patient_nmf_umap
-            closest_patient = umap_cohort.nsmallest(3, "dist")
-            st.write("Closest patients in the cohort are: ", closest_patient)
-            st.write("Closest patient: ", cohort.loc[closest_patient.index[0]])
-            st.write(
-                get_hpo_name_list(
-                    cohort.loc[closest_patient.index[0]].hpo_list.split(","),
-                    hp_onto,
-                )
-            )
-
-            cluster_selected = cluster_info[str(closest_patient["cluster"].values[0])]
-            st.write("Selected cluster: ", closest_patient["cluster"].values[0])
-            st.write("Number of patient in cluster: ", cluster_selected["n_patients"])
-            del closest_patient
-
-            gene_in_cluster = pd.DataFrame.from_dict(
-                dict(Counter(cluster_selected["gene_list"])), orient="index"
-            )
-            gene_in_cluster.columns = ["count"]
-            if gene_diag:
-                if gene_diag in gene_in_cluster.index:
-                    st.write("Gene diag in cluster", gene_in_cluster.loc[gene_diag, :])
-
-            st.write(
-                "Gene(s) involved in cluster: ",
-                gene_in_cluster.sort_values("count", ascending=False),
-            )
-            del gene_in_cluster
-
-            group_involved = cluster_selected["group"]
-            if (
-                isinstance(group_involved, float)
-                and math.isnan(float(group_involved)) == False
-            ):
-                topic_involved = topic.loc[topic_involved, :]
-                st.write(
-                    "Group(s) of symptoms statistically enriched: ", topic_involved
-                )
-            elif isinstance(group_involved, str):
-                group_list = [int(x) for x in cluster_selected["group"].split(",")]
-                topic_involved = topic.loc[group_list, :]
-                st.write(
-                    "Group(s) of symptoms statistically enriched: ", topic_involved
-                )
-                del topic_involved
-            del group_involved
-
-            dict_count_print = {}
-            dict_count = dict(Counter(cluster_selected["hpo_list"]))
-            dict_count_sorted = sorted(
-                dict_count.items(), key=lambda x: x[1], reverse=True
-            )
-            del cluster_selected
-            for element in dict_count_sorted:
-                dict_count_print[element[0]] = {
-                    "description": hp_onto[element[0]]["name"],
-                    "count": element[1],
-                }
-            st.write(
-                "HPOs declared in cluster:",
-                pd.DataFrame.from_dict(dict_count_print, orient="index"),
-            )
-            del dict_count
-            del dict_count_print
-            del dict_count_sorted
-
+#        patient_transposed = sklearn.preprocessing.normalize(
+#            np.array(patient_df_info["mean_score"]).reshape(1, -1), norm="l1"
+#        )
+#        del patient_df_info
+#
+#        patient_nmf_umap = umap.transform(pd.DataFrame(patient_transposed))
+#        del patient_transposed
+#
+#        with st.expander("See projection in cohort"):
+#            umap_cohort["dist"] = abs(umap_cohort["x"] - patient_nmf_umap[0, 0]) + abs(
+#                umap_cohort["y"] - patient_nmf_umap[0, 1]
+#            )
+#            del patient_nmf_umap
+#            closest_patient = umap_cohort.nsmallest(3, "dist")
+#            st.write("Closest patients in the cohort are: ", closest_patient)
+#            st.write("Closest patient: ", cohort.loc[closest_patient.index[0]])
+#            st.write(
+#                get_hpo_name_list(
+#                    cohort.loc[closest_patient.index[0]].hpo_list.split(","),
+#                    hp_onto,
+#                )
+#            )
+#
+#            cluster_selected = cluster_info[str(closest_patient["cluster"].values[0])]
+#            st.write("Selected cluster: ", closest_patient["cluster"].values[0])
+#            st.write("Number of patient in cluster: ", cluster_selected["n_patients"])
+#            del closest_patient
+#
+#            gene_in_cluster = pd.DataFrame.from_dict(
+#                dict(Counter(cluster_selected["gene_list"])), orient="index"
+#            )
+#            gene_in_cluster.columns = ["count"]
+#            if gene_diag:
+#                if gene_diag in gene_in_cluster.index:
+#                    st.write("Gene diag in cluster", gene_in_cluster.loc[gene_diag, :])
+#
+#            st.write(
+#                "Gene(s) involved in cluster: ",
+#                gene_in_cluster.sort_values("count", ascending=False),
+#            )
+#            del gene_in_cluster
+#
+#            group_involved = cluster_selected["group"]
+#            if (
+#                isinstance(group_involved, float)
+#                and math.isnan(float(group_involved)) == False
+#            ):
+#                topic_involved = topic.loc[topic_involved, :]
+#                st.write(
+#                    "Group(s) of symptoms statistically enriched: ", topic_involved
+#                )
+#            elif isinstance(group_involved, str):
+#                group_list = [int(x) for x in cluster_selected["group"].split(",")]
+#                topic_involved = topic.loc[group_list, :]
+#                st.write(
+#                    "Group(s) of symptoms statistically enriched: ", topic_involved
+#                )
+#                del topic_involved
+#            del group_involved
+#
+#            dict_count_print = {}
+#            dict_count = dict(Counter(cluster_selected["hpo_list"]))
+#            dict_count_sorted = sorted(
+#                dict_count.items(), key=lambda x: x[1], reverse=True
+#            )
+#            del cluster_selected
+#            for element in dict_count_sorted:
+#                dict_count_print[element[0]] = {
+#                    "description": hp_onto[element[0]]["name"],
+#                    "count": element[1],
+#                }
+#            st.write(
+#                "HPOs declared in cluster:",
+#                pd.DataFrame.from_dict(dict_count_print, orient="index"),
+#            )
+#            del dict_count
+#            del dict_count_print
+#            del dict_count_sorted
+#        
         sim_dict, hpo_list_add = get_similar_terms(hpo_list, similarity_terms_dict)
         similar_list = list(set(hpo_list_add) - set(hpo_list))
-        similar_list_desc = get_hpo_name_list(similar_list, hp_onto)
+        similar_list_desc = get_hpo_name_list(similar_list, hp_onto) 
+
         if similar_list_desc:
             with st.expander("See symptoms with similarity > 80%"):
                 similar_list_desc_df = pd.DataFrame.from_dict(
