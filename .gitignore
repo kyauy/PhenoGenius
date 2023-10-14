@@ -1,0 +1,4 @@
+poetry.lock
+*.ipynb
+*.tsv
+*csv
