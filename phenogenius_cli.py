@@ -87,6 +87,18 @@ def score_sim_add(hpo_list_add, matrix, sim_dict, symbol):
     )
     return matrix_filter.sort_values("sum", ascending=False)
 
+def get_phenotype_specificity(row):
+    rank = row["rank"]
+    score = row["score"]
+    if score < 0.1:
+        return "D - the reported phenotype is NOT consistent with what is expected for the gene/genomic region or not consistent in general."
+    elif rank < 41:
+        return "A - the reported phenotype is highly specific and relatively unique to the gene (top 40, 50 perc of diagnosis in PhenoGenius cohort)."
+    elif rank < 250:
+        return "B - the reported phenotype is consistent with the gene, is highly specific, but not necessarily unique to the gene (top 250, 75 perc of diagnosis in PhenoGenius cohort)."
+    else:
+        return "C - the phenotype is reported with limited association with the gene, not highly specific and/or with high genetic heterogeneity."
+    
 def get_hpo_implicated_dict(data, hpo_list, hp_onto):
     data_filter = data[hpo_list]
     data_filter_dict = data_filter.to_dict(orient='index')
@@ -116,8 +128,9 @@ def add_hpo_description_implicated(x, annot_dict):
     
 @click.command()
 @click.option("--result_file", default="match.tsv")
-@click.option("--hpo_list", default=None)
-def evaluate_matching(result_file, hpo_list):
+@click.option("--hpo_list", default=None, help="List of HPO terms to match, separated with commas")
+@click.option("--gene_list", default=None, help="List of genes in NCBI ID format to match, separated with commas")
+def evaluate_matching(result_file, hpo_list, gene_list):
     logging.info("INFO: load databases")
     ncbi, symbol = symbol_to_id_to_dict()
     data = load_data()
@@ -186,10 +199,15 @@ def evaluate_matching(result_file, hpo_list):
             )
             match_nmf = case_df_sort[["gene_symbol", "rank", "sum"]]
             match_nmf_filter = match_nmf[match_nmf["sum"] > 0.01].reset_index()
-            match_nmf_filter.columns = ["gene_id", "gene_symbol", "rank", "sum"]
-            match_nmf_filter["sum"] = match_nmf_filter["sum"].round(2)
+            match_nmf_filter.columns = ["gene_id", "gene_symbol", "rank", "score"]
+            match_nmf_filter["score"] = match_nmf_filter["score"].round(2)
             match_nmf_filter["hpo_implicated"] = match_nmf_filter["gene_id"].apply(add_hpo_implicated, args=(annot_dict,))
             match_nmf_filter["hpo_description_implicated"] = match_nmf_filter["gene_id"].apply(add_hpo_description_implicated, args=(annot_dict,))
+            match_nmf_filter["phenotype_specificity"] = match_nmf_filter.apply(get_phenotype_specificity, axis=1)
+            if gene_list is not None:
+                gene_list = gene_list.strip().split(",")
+                gene_list_int = [eval(x) for x in gene_list]
+                match_nmf_filter = match_nmf_filter[match_nmf_filter["gene_id"].isin(gene_list_int)]
             match_nmf_filter.to_csv(result_file, sep="\t", index=False)
 
         else:
@@ -205,10 +223,15 @@ def evaluate_matching(result_file, hpo_list):
             match_sim = results_sum_add[cols].sort_values(by=["sum"], ascending=False)
             match_sim_filter = match_sim[match_sim["sum"] > 0.01].reset_index()
             match_sim_filter_print = match_sim_filter.iloc[:, [0, 1, 2, -1]]
-            match_sim_filter_print.columns = ["gene_id", "gene_symbol", "rank", "sum"]
-            match_sim_filter_print["sum"] = match_sim_filter_print["sum"].round(2)
+            match_sim_filter_print.columns = ["gene_id", "gene_symbol", "rank", "score"]
+            match_sim_filter_print["score"] = match_sim_filter_print["score"].round(2)
             match_sim_filter_print["hpo_implicated"] = match_sim_filter_print["gene_id"].apply(add_hpo_implicated, args=(annot_dict,))
             match_sim_filter_print["hpo_description_implicated"] = match_sim_filter_print["gene_id"].apply(add_hpo_description_implicated, args=(annot_dict,))
+            match_sim_filter_print["phenotype_specificity"] = match_sim_filter_print.apply(get_phenotype_specificity, axis=1)
+            if gene_list is not None:
+                gene_list = gene_list.strip().split(",")
+                gene_list_int = [eval(x) for x in gene_list]
+                match_sim_filter_print = match_sim_filter_print[match_sim_filter_print["gene_id"].isin([eval(i) for i in gene_list_int])]
             match_sim_filter_print.to_csv(result_file, sep="\t", index=False)
 
 
