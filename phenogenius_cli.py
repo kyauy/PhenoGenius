@@ -127,9 +127,9 @@ def add_hpo_description_implicated(x, annot_dict):
         return None
     
 @click.command()
-@click.option("--result_file", default="match.tsv")
-@click.option("--hpo_list", default=None, help="List of HPO terms to match, separated with commas")
-@click.option("--gene_list", default=None, help="List of genes in NCBI ID format to match, separated with commas")
+@click.option("--result_file", default="match.tsv", help="Output file name, default = match.tsv")
+@click.option("--hpo_list", default=None, help="(Mandatory) List of HPO terms to match, separated with commas")
+@click.option("--gene_list", default=None, help="(Optional) List of genes in NCBI ID format to match, separated with commas")
 def evaluate_matching(result_file, hpo_list, gene_list):
     logging.info("INFO: load databases")
     ncbi, symbol = symbol_to_id_to_dict()

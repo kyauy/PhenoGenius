@@ -45,6 +45,16 @@ streamlit run phenogenius_app.py
 poetry shell
 python phenogenius_cli.py --hpo_list HP:0000107,HP:0000108,HP:0001407,HP:0005562 --result_file PKD1.tsv
 ```
+```
+Usage: phenogenius_cli.py [OPTIONS]
+
+Options:
+  --result_file TEXT  Output file name, default = match.tsv
+  --hpo_list TEXT     (Mandatory) List of HPO terms to match, separated with
+                      commas
+  --gene_list TEXT    (Optional) List of genes in NCBI ID format to match,
+                      separated with commas
+```
 
 ## Explore interactive graphs of symptoms interactions
 
