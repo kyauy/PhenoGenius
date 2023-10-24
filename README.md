@@ -16,7 +16,7 @@ Symptom interaction modeling for precision medicine
 
 Symptom interaction model provide a method to standardize clinical descriptions and fully exploit phenotypic data in precision medicine.
 
-This repository contains scripts and files to use PhenoGenius, the phenotype matching system for genetic disease based on this model. **Please try PhenoGenius in the cloud at [https://phenogenius.azurewebsites.net/](https://phenogenius.azurewebsites.net/).**
+This repository contains scripts and files to use PhenoGenius, the phenotype matching system for genetic disease based on this model. **Please try PhenoGenius in the cloud at [https://huggingface.co/spaces/kyauy/PhenoGenius](https://huggingface.co/spaces/kyauy/PhenoGenius).**
 
 If you use PhenoGenius, please cite:
 > Yauy et al., Learning phenotypic patterns in genetic disease by symptom interaction modeling. medrXiv (2023). [https://doi.org/10.1101/2022.07.29.22278181](https://doi.org/10.1101/2022.07.29.22278181)
