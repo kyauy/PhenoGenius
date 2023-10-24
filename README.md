@@ -1,3 +1,12 @@
+---
+title: PhenoGenius
+emoji: genie
+sdk: streamlit
+sdk_version: 1.11.1
+app_file: phenogenius_app.py
+pinned: true
+---
+
 # PhenoGenius
 
 Symptom interaction modeling for precision medicine
