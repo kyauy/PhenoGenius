@@ -2,7 +2,7 @@
 title: PhenoGenius
 emoji: genie
 sdk: streamlit
-sdk_version: 1.11.1
+sdk_version: 1.25.0
 app_file: phenogenius_app.py
 pinned: true
 ---
