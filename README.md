@@ -2,8 +2,6 @@
 
 Symptom interaction modeling for precision medicine
 
-<img src="https://raw.githubusercontent.com/kyauy/PhenoGenius/main/data/img/phenogenius.png" width="150" height="150">
-
 ## Overview
 
 Symptom interaction model provide a method to standardize clinical descriptions and fully exploit phenotypic data in precision medicine.
@@ -81,5 +79,3 @@ Enjoy !
 [![SeqOne](data/img/logo-seqone.png)](https://seqone.com/)
 
 [![Université Grenoble Alpes](data/img/logo-uga.png)](https://iab.univ-grenoble-alpes.fr/)
-
-<a href="https://www.chu-grenoble.fr/content/service-de-genetique-genomique-et-procreation"><img src="https://www.chu-grenoble.fr/sites/all/themes/acti_main/tpl/img/logo.png"></a>
