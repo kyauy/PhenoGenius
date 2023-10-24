@@ -4,6 +4,7 @@ emoji: genie
 sdk: streamlit
 sdk_version: 1.25.0
 app_file: phenogenius_app.py
+python_version: 3.8
 pinned: true
 ---
 
