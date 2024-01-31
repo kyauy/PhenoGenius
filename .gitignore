@@ -3,3 +3,9 @@ poetry.lock
 *.tsv
 *.csv
 *DS_Store*
+*.json
+*.xlsx
+*.json.gz
+*.xls
+*.tsv.gz
+data/resources/hp.obo

@@ -2,12 +2,17 @@ import numpy as np
 import pandas as pd
 import ujson as json
 import pickle as pk
-import sklearn
 from pandarallel import pandarallel
-import sys
 import click
 import logging
+import subprocess
 
+def get_version_from_git_tag():
+    try:
+        version = subprocess.check_output(["git", "describe", "--tags"]).strip().decode('utf-8')
+    except Exception:
+        version = "Unknown"
+    return version
 
 def load_data():
     matrix = pd.read_csv(
@@ -127,6 +132,7 @@ def add_hpo_description_implicated(x, annot_dict):
         return None
     
 @click.command()
+@click.version_option(version=get_version_from_git_tag(), prog_name="PhenoGenius")
 @click.option("--result_file", default="match.tsv", help="Output file name, default = match.tsv")
 @click.option("--hpo_list", default=None, help="(Mandatory) List of HPO terms to match, separated with commas")
 @click.option("--gene_list", default=None, help="(Optional) List of genes in NCBI ID format to match, separated with commas")
@@ -199,7 +205,7 @@ def evaluate_matching(result_file, hpo_list, gene_list):
             )
             match_nmf = case_df_sort[["gene_symbol", "rank", "sum"]]
             match_nmf_filter = match_nmf[match_nmf["sum"] > 0.01].reset_index()
-            match_nmf_filter.columns = ["gene_id", "gene_symbol", "rank", "score"]
+            match_nmf_filter.columns = ["#gene_id", "gene_symbol", "rank", "score"]
             match_nmf_filter["score"] = match_nmf_filter["score"].round(2)
             match_nmf_filter["hpo_implicated"] = match_nmf_filter["gene_id"].apply(add_hpo_implicated, args=(annot_dict,))
             match_nmf_filter["hpo_description_implicated"] = match_nmf_filter["gene_id"].apply(add_hpo_description_implicated, args=(annot_dict,))
@@ -223,7 +229,7 @@ def evaluate_matching(result_file, hpo_list, gene_list):
             match_sim = results_sum_add[cols].sort_values(by=["sum"], ascending=False)
             match_sim_filter = match_sim[match_sim["sum"] > 0.01].reset_index()
             match_sim_filter_print = match_sim_filter.iloc[:, [0, 1, 2, -1]]
-            match_sim_filter_print.columns = ["gene_id", "gene_symbol", "rank", "score"]
+            match_sim_filter_print.columns = ["#gene_id", "gene_symbol", "rank", "score"]
             match_sim_filter_print["score"] = match_sim_filter_print["score"].round(2)
             match_sim_filter_print["hpo_implicated"] = match_sim_filter_print["gene_id"].apply(add_hpo_implicated, args=(annot_dict,))
             match_sim_filter_print["hpo_description_implicated"] = match_sim_filter_print["gene_id"].apply(add_hpo_description_implicated, args=(annot_dict,))

@@ -57,12 +57,28 @@ python phenogenius_cli.py --hpo_list HP:0000107,HP:0000108,HP:0001407,HP:0005562
 Usage: phenogenius_cli.py [OPTIONS]
 
 Options:
+  --version           Show the version and exit.
   --result_file TEXT  Output file name, default = match.tsv
   --hpo_list TEXT     (Mandatory) List of HPO terms to match, separated with
                       commas
   --gene_list TEXT    (Optional) List of genes in NCBI ID format to match,
                       separated with commas
 ```
+
+| Field                         | Description                                                                                                               |
+|-------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| `gene_id`                     | NCBI gene identifier                                                                                                      |
+| `gene_symbol`                 | HGNC gene symbol                                                                                                          |
+| `rank`                        | float                                                                                                                     |
+| `score`                       | float                                                                                                                     |
+| `hpo_implicated`              | List of HPO IDs associated to the gene (scores correspond to confidence to each HPO gene association)                     |
+| `hpo_description_implicated`  | List of HPO names associated to the gene                                                                                  |
+| `phenotype_specificity`       | Phenotype specificity into one of "A", "B", "C" or "D"                                                                    |
+|                               | A - Highly specific and relatively unique to the gene (top 40, 50% of diagnosis in PhenoGenius cohort)                    |
+|                               | B - Consistent with the gene, highly specific, but not unique (top 250, 75% of diagnosis in PhenoGenius cohort)           |
+|                               | C - Limited association, not highly specific or with high genetic heterogeneity                                           |
+|                               | D - Not consistent with what is expected for the gene/genomic region or not consistent in general                         |
+
 
 ## Explore interactive graphs of symptoms interactions
 
