@@ -1,13 +1,9 @@
-from ast import Str
 import streamlit as st
 import numpy as np
 import pandas as pd
 from PIL import Image
 import ujson as json
 import pickle as pk
-from collections import Counter
-import math
-import sklearn
 from plotnine import *
 
 # -- Set page config
@@ -216,19 +212,32 @@ def get_similar_terms(hpo_list, similarity_terms_dict):
 
 
 def score(hpo_list, matrix):
-    matrix_filter = matrix[hpo_list]
-    matrix_filter["sum"] = matrix_filter.sum(axis=1)
-    matrix_filter["gene_symbol"] = matrix_filter.index.to_series().apply(get_symbol)
-    return matrix_filter.sort_values("sum", ascending=False)
+    # Create a copy of the filtered matrix to avoid SettingWithCopyWarning
+    matrix_filter = matrix[hpo_list].copy()
+    
+    # Use .loc to safely add or modify columns in the copy of the DataFrame
+    matrix_filter.loc[:, 'sum'] = matrix_filter.sum(axis=1)
+    matrix_filter.loc[:, 'gene_symbol'] = matrix_filter.index.to_series().apply(get_symbol)
 
+    # Return the modified DataFrame sorted by 'sum'
+    return matrix_filter.sort_values("sum", ascending=False)
 
 def score_sim_add(hpo_list_add, matrix, sim_dict):
-    matrix_filter = matrix[hpo_list_add]
+    # Ensure matrix_filter is a copy to avoid modifying the original DataFrame
+    matrix_filter = matrix[hpo_list_add].copy()
+    
+    # Iterate through sim_dict to update matrix_filter values
     for key, value in sim_dict.items():
-        matrix_filter[key] = matrix_filter[key] * value
+        if key in matrix_filter.columns:
+            matrix_filter[key] = matrix_filter[key] * value  # Direct column assignment is fine here
+    
+    # Calculate the sum and assign gene_symbol, using direct assignment for these operations
     matrix_filter["sum"] = matrix_filter.sum(axis=1)
     matrix_filter["gene_symbol"] = matrix_filter.index.to_series().apply(get_symbol)
+    
+    # Return the DataFrame sorted by 'sum'
     return matrix_filter.sort_values("sum", ascending=False)
+
 
 
 def get_phenotype_specificity(gene_diag, data_patient):
