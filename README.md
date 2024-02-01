@@ -69,8 +69,8 @@ Options:
 |-------------------------------|---------------------------------------------------------------------------------------------------------------------------|
 | `gene_id`                     | NCBI gene identifier                                                                                                      |
 | `gene_symbol`                 | HGNC gene symbol                                                                                                          |
-| `rank`                        | float                                                                                                                     |
-| `score`                       | float                                                                                                                     |
+| `rank`                        | Output line position, from the most to the less "phenotype matching" (integer)                                            |
+| `score`                       | “Phenotype matching”: confidence of the symptoms gene association. The higher it is, the higher this confidence (float)   |
 | `hpo_implicated`              | List of HPO IDs associated to the gene (scores correspond to confidence to each HPO gene association)                     |
 | `hpo_description_implicated`  | List of HPO names associated to the gene                                                                                  |
 | `phenotype_specificity`       | Phenotype specificity into one of "A", "B", "C" or "D"                                                                    |
