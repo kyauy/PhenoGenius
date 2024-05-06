@@ -28,6 +28,7 @@ If you use PhenoGenius, please cite:
 ```bash
 python == 3.8 #(pyenv install 3.8)
 poetry #(https://python-poetry.org/docs/#installation)
+git-lfs
 ```
 
 - Install dependencies
@@ -35,6 +36,8 @@ poetry #(https://python-poetry.org/docs/#installation)
 ```bash
 poetry install
 ```
+
+NB: if git-lfs is not installed, you won't be able to download PhenoGenius resources.
 
 ## Use streamlit webapp in your desktop
 
@@ -105,3 +108,5 @@ Enjoy !
 [![SeqOne](data/img/logo-seqone.png)](https://seqone.com/)
 
 [![Université Grenoble Alpes](data/img/logo-uga.png)](https://iab.univ-grenoble-alpes.fr/)
+
+

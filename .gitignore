@@ -9,3 +9,5 @@ poetry.lock
 *.xls
 *.tsv.gz
 data/resources/hp.obo
+*.txt
+data_202205/*
